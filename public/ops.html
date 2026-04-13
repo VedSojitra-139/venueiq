@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <meta name="robots" content="noindex"/> <!-- don't expose ops URL to search engines -->
+  <title>VenueIQ Ops — Narendra Modi Stadium</title>
+  <style>
+  :root{--bg:#0a1520;--surface:#0f1923;--s2:#1e2d3d;--brand:#38bdf8;--text:#e2e8f0;--muted:#64748b;--border:#1e2d3d;--danger:#ef4444;--warn:#f59e0b;--ok:#22c55e;--crit:#d946ef}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:system-ui,sans-serif;background:var(--bg);color:var(--text);display:flex;flex-direction:column;height:100vh;overflow:hidden;font-size:14px}
+  :focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+  header{display:flex;align-items:center;justify-content:space-between;padding:.55rem 1.1rem;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0}
+  .brand{font-weight:700;font-size:.95rem;color:var(--brand)}
+  .hbadge{background:var(--s2);border-radius:6px;padding:.2rem .55rem;font-size:.72rem;color:var(--muted)}
+  .main{display:grid;grid-template-columns:1fr 290px;flex:1;overflow:hidden}
+  #map-panel{position:relative;border-right:1px solid var(--border);overflow:hidden}
+  #ops-svg{width:100%;height:100%}
+  .sidebar{display:flex;flex-direction:column;overflow-y:auto}
+  .sec{padding:.65rem .9rem;border-bottom:1px solid var(--border)}
+  .sec h2{font-size:.68rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:.55rem;font-weight:500}
+  .metrics{display:grid;grid-template-columns:1fr 1fr;gap:.4rem}
+  .metric{background:var(--surface);border-radius:8px;padding:.55rem .7rem}
+  .metric .val{font-size:1.35rem;font-weight:700;color:var(--brand)}
+  .metric .lbl{font-size:.68rem;color:var(--muted);margin-top:.1rem}
+  .stand-row{display:flex;align-items:center;gap:.5rem;padding:.3rem 0;border-bottom:1px solid var(--surface)}
+  .stand-row:last-child{border:none}
+  .stand-name{font-size:.78rem;flex:1;color:#cbd5e1}
+  .bar-wrap{width:70px;height:5px;background:var(--s2);border-radius:3px;overflow:hidden;flex-shrink:0}
+  .bar{height:100%;border-radius:3px;transition:width .6s,background .6s}
+  .stand-pct{font-size:.72rem;min-width:28px;text-align:right;color:var(--muted)}
+  .alert-item{border-left:3px solid var(--danger);background:#1a0505;border-radius:0 6px 6px 0;padding:.35rem .55rem;font-size:.76rem;color:#fca5a5;margin-bottom:.35rem}
+  .alert-item.warn{border-color:var(--warn);background:#1a1005;color:#fde68a}
+  .no-alerts{font-size:.78rem;color:var(--muted)}
+  .demo-btn{background:var(--s2);color:var(--text);border:1px solid var(--border);border-radius:7px;padding:.45rem .8rem;cursor:pointer;font-size:.78rem;width:100%;text-align:left;transition:background .15s;margin-bottom:.35rem}
+  .demo-btn:hover{background:#253346}
+  .demo-btn.red{border-color:#450a0a;color:var(--danger)}
+  legend-bar{display:flex;gap:.65rem;flex-wrap:wrap;padding:.4rem .9rem;background:var(--bg);border-top:1px solid var(--border);flex-shrink:0;font-size:.68rem}
+  .leg{display:inline-flex;align-items:center;gap:.3rem;color:var(--muted)}
+  .leg-sq{width:9px;height:9px;border-radius:2px;flex-shrink:0}
+  </style>
+</head>
+<body>
+
+<header role="banner">
+  <div>
+    <span class="brand">VenueIQ Ops</span>
+    <span style="font-size:.8rem;color:var(--muted);margin-left:.6rem">Narendra Modi Stadium · IND vs AUS</span>
+  </div>
+  <div>
+    <span class="hbadge" id="ws-status" aria-live="polite">Connecting…</span>
+    <span class="hbadge" id="last-update" style="margin-left:.4rem"></span>
+  </div>
+</header>
+
+<div class="main" role="main">
+  <!-- Map -->
+  <section id="map-panel" aria-label="Stadium heatmap">
+    <svg id="ops-svg" viewBox="0 0 680 680" preserveAspectRatio="xMidYMid meet"
+         role="img" aria-label="Stadium crowd density heatmap"></svg>
+  </section>
+
+  <!-- Sidebar -->
+  <aside class="sidebar" aria-label="Ops metrics and controls">
+
+    <div class="sec">
+      <h2>Live metrics</h2>
+      <div class="metrics" role="list">
+        <div class="metric" role="listitem"><div class="val" id="m-total">—</div><div class="lbl">Checked in</div></div>
+        <div class="metric" role="listitem"><div class="val" id="m-cap">—</div><div class="lbl">Avg capacity</div></div>
+        <div class="metric" role="listitem"><div class="val" id="m-alerts">0</div><div class="lbl">Active alerts</div></div>
+        <div class="metric" role="listitem"><div class="val" id="m-full">—</div><div class="lbl">Busiest stand</div></div>
+      </div>
+    </div>
+
+    <div class="sec">
+      <h2>Stand occupancy</h2>
+      <div id="stand-list" role="list" aria-label="Stand occupancy details"></div>
+    </div>
+
+    <div class="sec">
+      <h2>Active alerts</h2>
+      <div id="alert-list" role="log" aria-live="polite" aria-label="Active crowd alerts">
+        <p class="no-alerts">No alerts</p>
+      </div>
+    </div>
+
+    <div class="sec">
+      <h2>Demo controls</h2>
+      <button class="demo-btn" onclick="surgeSim('stand-c')" type="button">Surge Stand C to 92%</button>
+      <button class="demo-btn" onclick="surgeSim('stand-a')" type="button">Surge Stand A to 92%</button>
+      <button class="demo-btn red" onclick="location.reload()" type="button">Reset dashboard</button>
+    </div>
+
+  </aside>
+</div>
+
+<div style="display:flex;gap:.65rem;flex-wrap:wrap;padding:.4rem .9rem;background:var(--bg);border-top:1px solid var(--border);flex-shrink:0;font-size:.68rem"
+     role="complementary" aria-label="Heatmap colour legend">
+  <span class="leg"><span class="leg-sq" style="background:#22c55e" aria-hidden="true"></span>0–40% normal</span>
+  <span class="leg"><span class="leg-sq" style="background:#f59e0b" aria-hidden="true"></span>40–70% moderate</span>
+  <span class="leg"><span class="leg-sq" style="background:#ef4444" aria-hidden="true"></span>70–90% high</span>
+  <span class="leg"><span class="leg-sq" style="background:#d946ef" aria-hidden="true"></span>90%+ critical</span>
+</div>
+
+<script src="/js/ops.js" defer></script>
+</body>
+</html>

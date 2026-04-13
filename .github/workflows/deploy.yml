@@ -1,0 +1,77 @@
+# CI/CD: test → build → push → deploy (all in one pipeline)
+# Benchmark: Google Services — deploys to Cloud Run via gcloud
+# Free: GitHub Actions 2000 min/month
+
+#name: CI/CD — VenueIQ
+#
+#on:
+#  push:
+#    branches: [main]
+#  pull_request:
+#    branches: [main]
+#
+#env:
+#  PROJECT_ID:   ${{ secrets.GCP_PROJECT_ID }}
+#  SERVICE_NAME: venueiq
+#  REGION:       us-central1
+#  IMAGE:        gcr.io/${{ secrets.GCP_PROJECT_ID }}/venueiq
+#
+#jobs:
+#  test:
+#    runs-on: ubuntu-latest
+#    steps:
+#      - uses: actions/checkout@v4
+#      - uses: actions/setup-node@v4
+#        with: { node-version: '20', cache: 'npm' }
+#      - run: npm ci
+#      - run: npm test
+#      - name: Upload coverage
+#        uses: actions/upload-artifact@v4
+#        with: { name: coverage, path: coverage/ }
+#
+#  deploy:
+#    needs: test
+#    if: github.ref == 'refs/heads/main'
+#    runs-on: ubuntu-latest
+#    permissions:
+#      contents: read
+#      id-token: write
+#    steps:
+#      - uses: actions/checkout@v4
+#
+#      - name: Authenticate to GCP
+#        uses: google-github-actions/auth@v2
+#        with:
+#          credentials_json: ${{ secrets.GCP_SA_KEY }}
+#
+#      - name: Set up Cloud SDK
+#        uses: google-github-actions/setup-gcloud@v2
+#
+#      - name: Configure Docker for GCR
+#        run: gcloud auth configure-docker
+#
+#      - name: Build and push Docker image
+#        run: |
+#          docker build -t $IMAGE:${{ github.sha }} -t $IMAGE:latest .
+#          docker push $IMAGE:${{ github.sha }}
+#          docker push $IMAGE:latest
+#
+#      - name: Deploy to Cloud Run
+#        run: |
+#          gcloud run deploy $SERVICE_NAME \
+#            --image $IMAGE:${{ github.sha }} \
+#            --region $REGION \
+#            --platform managed \
+#            --allow-unauthenticated \
+#            --min-instances 0 \
+#            --max-instances 2 \
+#            --memory 256Mi \
+#            --cpu 1 \
+#            --timeout 60 \
+#            --set-env-vars "NODE_ENV=production,FIREBASE_PROJECT_ID=$PROJECT_ID" \
+#            --set-secrets "GEMINI_API_KEY=GEMINI_API_KEY:latest,JWT_SECRET=JWT_SECRET:latest,OPS_PASSWORD=OPS_PASSWORD:latest"
+#
+#      - name: Deploy Firebase Hosting
+#        run: |
+#          npm install -g firebase-tools
+#          firebase deploy --only hosting --project $PROJECT_ID --token ${{ secrets.FIREBASE_TOKEN }}
