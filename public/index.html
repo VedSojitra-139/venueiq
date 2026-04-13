@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+  <meta name="description" content="VenueIQ — your personal cricket stadium guide. Find your seat, food, washrooms and emergency exits."/>
+  <meta name="theme-color" content="#0f1923"/>
+
+  <!-- Open Graph for sharing -->
+  <meta property="og:title"       content="VenueIQ — Stadium Guide"/>
+  <meta property="og:description" content="Navigate Narendra Modi Stadium with AI assistance"/>
+  <meta property="og:type"        content="website"/>
+
+  <title>VenueIQ — Your Stadium Guide</title>
+  <link rel="stylesheet" href="/css/fan.css"/>
+
+  <!-- Preconnect to API origin for faster first request -->
+  <link rel="preconnect" href="https://generativelanguage.googleapis.com"/>
+</head>
+<body>
+
+<!-- Skip link — keyboard/screen reader accessibility -->
+<a href="#main-content" class="skip-link" style="position:absolute;left:-999px;top:auto;width:1px;height:1px;overflow:hidden;">
+  Skip to main content
+</a>
+
+<!-- ── ARIA live region — announces dynamic updates to screen readers ── -->
+<div id="live-region" role="status" aria-live="polite" aria-atomic="true"
+     style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)"></div>
+
+<!-- ════════════════════════════════════════════
+     SCREEN 1 — PNR Entry
+════════════════════════════════════════════ -->
+<main id="main-content">
+<div id="s-pnr" class="screen active" role="main" aria-label="Ticket verification">
+  <div class="logo" role="heading" aria-level="1">VenueIQ</div>
+  <p class="tagline">Your personal stadium guide</p>
+
+  <div class="card" role="form" aria-label="Enter ticket details">
+    <h2>Enter your ticket details</h2>
+
+    <div class="field-wrap">
+      <label class="field-label" for="inp-pnr">PNR Number</label>
+      <input id="inp-pnr" type="text" inputmode="text"
+             placeholder="e.g. IND2024001"
+             autocomplete="off" autocapitalize="characters"
+             aria-describedby="pnr-err" aria-required="true"/>
+    </div>
+
+    <div class="field-wrap">
+      <label class="field-label" for="inp-phone">Registered Mobile Number</label>
+      <input id="inp-phone" type="tel" inputmode="numeric"
+             placeholder="10-digit mobile number"
+             autocomplete="tel" maxlength="10"
+             aria-describedby="pnr-err" aria-required="true"/>
+    </div>
+
+    <!-- aria-live — announces errors to screen readers without focus move -->
+    <div id="pnr-err" class="err-msg" role="alert" aria-live="assertive"></div>
+
+    <button id="btn-verify" class="btn" onclick="verifyPNR()" type="button"
+            aria-describedby="pnr-err">
+      Find my seat
+    </button>
+  </div>
+
+  <p class="demo-hint" aria-label="Demo hint">Demo PNR: IND2024001 · Phone: 9999999999</p>
+</div>
+
+
+<!-- ════════════════════════════════════════════
+     SCREEN 2 — Welcome
+════════════════════════════════════════════ -->
+<div id="s-welcome" class="screen" role="main" aria-label="Your seat information" aria-hidden="true">
+  <div class="match-banner" aria-label="Match details">
+    <div class="teams" role="heading" aria-level="1">IND vs AUS</div>
+    <div class="meta" id="match-meta" aria-live="polite"></div>
+  </div>
+
+  <p class="greeting">Welcome, <span id="fan-first-name" aria-live="polite">—</span>!</p>
+
+  <section aria-label="Seat details">
+    <div id="seat-card" class="seat-card"></div>
+  </section>
+
+  <div class="walk-hint" id="walk-hint" role="note" aria-label="Entry instructions"></div>
+
+  <button class="btn" onclick="goToMap('seat')" type="button"
+          aria-label="Show route to your seat on the map">
+    Show me the way
+  </button>
+
+  <nav class="cta-grid" aria-label="Quick navigation options">
+    <button class="btn-ghost" onclick="goToMap('food')"     type="button" aria-label="Find nearest food stalls">Food stalls</button>
+    <button class="btn-ghost" onclick="goToMap('washroom')" type="button" aria-label="Find nearest washrooms">Washroom</button>
+    <button class="btn-ghost" onclick="goToMap('exit')"     type="button" aria-label="Find emergency exits">Exits</button>
+  </nav>
+
+  <button class="btn-ghost" onclick="showScreen('s-chat')" type="button"
+          aria-label="Open AI stadium assistant chat">
+    Ask AI assistant
+  </button>
+</div>
+
+
+<!-- ════════════════════════════════════════════
+     SCREEN 3 — Map
+════════════════════════════════════════════ -->
+<div id="s-map" class="screen" role="main" aria-label="Stadium map" aria-hidden="true">
+  <header class="map-header">
+    <button class="back-btn" onclick="showScreen('s-welcome')" type="button"
+            aria-label="Back to seat details">&#8592;</button>
+    <h1 class="map-title" id="map-title">Route to your seat</h1>
+  </header>
+
+  <div id="stadium-wrap" role="region" aria-label="Interactive stadium map">
+    <div id="stadium-svg"></div>
+    <div class="map-legend" role="complementary" aria-label="Map legend">
+      <div class="leg-row"><div class="leg-dot" style="background:#38bdf8" aria-hidden="true"></div><span>Your path</span></div>
+      <div class="leg-row"><div class="leg-dot" style="background:#facc15" aria-hidden="true"></div><span>Food</span></div>
+      <div class="leg-row"><div class="leg-dot" style="background:#4ade80" aria-hidden="true"></div><span>Washroom</span></div>
+      <div class="leg-row"><div class="leg-dot" style="background:#f87171" aria-hidden="true"></div><span>Exit</span></div>
+    </div>
+  </div>
+
+  <div id="poi-panel" class="poi-panel" role="list" aria-label="Nearby options" hidden></div>
+
+  <!-- Tab bar — role=tablist for screen reader semantics -->
+  <nav class="tab-bar" role="tablist" aria-label="Navigation options">
+    <button class="tab active" id="tab-seat"     data-tab="seat"
+            role="tab" aria-selected="true"  aria-controls="poi-panel" onclick="switchTab('seat')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+      </svg>My seat
+    </button>
+    <button class="tab" id="tab-food"     data-tab="food"
+            role="tab" aria-selected="false" aria-controls="poi-panel" onclick="switchTab('food')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/>
+      </svg>Food
+    </button>
+    <button class="tab" id="tab-washroom" data-tab="washroom"
+            role="tab" aria-selected="false" aria-controls="poi-panel" onclick="switchTab('washroom')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <path d="M12 2v20M2 12h20"/>
+      </svg>WC
+    </button>
+    <button class="tab" id="tab-exit"     data-tab="exit"
+            role="tab" aria-selected="false" aria-controls="poi-panel" onclick="switchTab('exit')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
+      </svg>Exit
+    </button>
+  </nav>
+</div>
+
+
+<!-- ════════════════════════════════════════════
+     SCREEN 4 — AI Chat
+════════════════════════════════════════════ -->
+<div id="s-chat" class="screen" role="main" aria-label="AI chat assistant" aria-hidden="true">
+  <header class="chat-header">
+    <button class="back-btn" onclick="showScreen('s-welcome')" type="button"
+            aria-label="Back to seat details">&#8592;</button>
+    <div class="chat-header-info">
+      <div class="name">AI Stadium Assistant</div>
+      <div class="badge">Powered by Gemini 1.5 Flash</div>
+    </div>
+  </header>
+
+  <div id="chat-msgs" role="log" aria-live="polite" aria-label="Chat messages">
+    <div class="msg bot" role="status">
+      Hi! I'm your VenueIQ assistant. Ask me anything — crowd levels, food queues, directions, or match info!
+    </div>
+  </div>
+
+  <div class="chat-footer">
+    <label for="chat-inp" class="sr-only">Message VenueIQ assistant</label>
+    <input id="chat-inp" type="text" placeholder="Ask something…"
+           autocomplete="off" aria-label="Type your message"
+           maxlength="500"/>
+    <button class="chat-send" onclick="sendChat()" type="button" aria-label="Send message">&#10148;</button>
+  </div>
+</div>
+</main>
+
+<!-- sr-only utility -->
+<style>.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}</style>
+<script src="/js/fan.js" defer></script>
+</body>
+</html>
